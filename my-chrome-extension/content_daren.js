@@ -153,7 +153,7 @@ waitForElementXPath(xpathExpression, function(element) {
             subtree: true
         });
     }
-}, 5000);
+}, 6000);
 
 //监听来自background.js的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
