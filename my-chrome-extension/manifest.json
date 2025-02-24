@@ -1,0 +1,35 @@
+{
+    "manifest_version": 3,
+    "name": "Get Page Example",
+    "version": "1.0",
+    "description": "A Chrome extension to get data from the current webpage.",
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+      }},
+   "permissions": [
+    "activeTab", 
+    "scripting",
+    "storage",
+    "tabs"],
+    "host_permissions": [
+    "https://buyin.jinritemai.com/*" 
+    ],
+   "background": 
+   {
+    "service_worker": "background.js"
+   },
+   "content_scripts": [
+    {
+      "matches": ["https://fxg.jinritemai.com/*"],
+      "js": ["content.js"]
+    },
+    {
+      "matches": ["https://buyin.jinritemai.com/dashboard/servicehall/daren-square"],
+      "js": ["content_daren.js"]
+    }
+   ]
+  }
