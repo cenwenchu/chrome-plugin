@@ -4,6 +4,8 @@
 function openNewTab(daren_url, xpath) {
   console.log('开始执行openNewTab，URL:', daren_url, 'xpath:', xpath); // 添加日志
 
+  callOpenAI();
+
   // 确保 xpath 是数组形式
   const xpaths = Array.isArray(xpath) ? xpath : [xpath];
 
@@ -53,7 +55,7 @@ function extractDataFromPage(vxpath) {
   // 创建等待元素出现的函数
   async function waitForElement(xpath, timeout = 5000) {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       const element = document.evaluate(
         xpath,
@@ -62,14 +64,14 @@ function extractDataFromPage(vxpath) {
         XPathResult.FIRST_ORDERED_NODE_TYPE,
         null
       ).singleNodeValue;
-      
+
       if (element) {
         return element;
       }
-      
+
       await new Promise(resolve => setTimeout(resolve, 500));
     }
-    
+
     throw new Error(`等待元素超时: ${xpath}`);
   }
 
@@ -101,12 +103,12 @@ function extractDataFromPage(vxpath) {
 
       const dataElement = await waitForElement(getXpath);
       const rawText = dataElement.textContent.trim();
-      
+
       const kvArray = rawText.split(',').map(item => {
         const [key, value] = item.split(':').map(str => str.trim());
         return { key, value, xpath: xpath };
       });
-      
+
       allData = allData.concat(kvArray);
       console.log(`xpath ${index + 1} 提取到的数据为:`, kvArray);
     } catch (error) {
@@ -139,29 +141,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'dataExtracted') {
     console.log('后台页面获取到的数据为:', message.data);
     const formattedData = message.data.map(item => {
-        return `${item.key}: ${item.value}`;
+      return `${item.key}: ${item.value}`;
     });
     console.log('格式化后的数据:', formattedData);
 
     chrome.storage.local.get(['sourceTabId'], function (result) {
-        if (result.sourceTabId) {
-            // 先激活原始标签页，再发送数据
-            chrome.tabs.update(result.sourceTabId, { active: true }, () => {
-                chrome.tabs.sendMessage(result.sourceTabId, {
-                    action: 'returnData',
-                    data: formattedData
-                }).then(() => {
-                    chrome.tabs.remove(sender.tab.id);
-                    sendResponse({ status: 'success' });
-                }).catch((error) => {
-                    console.error('发送消息失败:', error);
-                    sendResponse({ status: 'error', error: error.message });
-                });
-            });
-        } else {
+      if (result.sourceTabId) {
+        // 先激活原始标签页，再发送数据
+        chrome.tabs.update(result.sourceTabId, { active: true }, () => {
+          chrome.tabs.sendMessage(result.sourceTabId, {
+            action: 'returnData',
+            data: formattedData
+          }).then(() => {
             chrome.tabs.remove(sender.tab.id);
             sendResponse({ status: 'success' });
-        }
+          }).catch((error) => {
+            console.error('发送消息失败:', error);
+            sendResponse({ status: 'error', error: error.message });
+          });
+        });
+      } else {
+        chrome.tabs.remove(sender.tab.id);
+        sendResponse({ status: 'success' });
+      }
     });
     return true;
   }
@@ -177,3 +179,63 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 
 });
+
+async function callOpenAI() {
+  // 替换为你的 API Key
+  const apiKey = "sk-9e627e4006a1489ca50c998ac1579e9b";
+
+  // 替换为你的模型名称
+   const model = "qwen-plus"; 
+ // const model = "deepseek-v3";
+
+  // 请求的 URL
+  const baseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
+
+  const endpoint = `${baseURL}/chat/completions`; // 确保路径正确
+
+  // 请求的数据
+  const requestData = {
+    model: model,
+    messages: [
+      { role: "user", content: "9.9和9.11谁大" }
+    ]
+  };
+
+  // 设置超时时间（例如 30 秒）
+  const timeout = 30000; // 30 秒
+  const controller = new AbortController();
+  //const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+
+    const startTime = Date.now();
+
+    // 发送请求
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestData)
+      //signal: controller.signal // 绑定 AbortController 
+    });
+
+    //clearTimeout(timeoutId); // 清除超时计时器
+
+    const endTime = Date.now();
+    console.log(`请求耗时：${(endTime - startTime) / 1000} 秒`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    console.log("最终答案：");
+    console.log(data.choices[0].message.content);
+  } catch (error) {
+    console.error("请求失败：", error);
+  }
+
+}

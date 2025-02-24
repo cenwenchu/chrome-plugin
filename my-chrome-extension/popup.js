@@ -12,3 +12,5 @@ chrome.storage.local.get("pageData", (result) => {
     document.getElementById("title").innerText = "No data found.";
   }
 });*/
+
+
