@@ -29,7 +29,7 @@
       "js": ["content.js"]
     },
     {
-      "matches": ["https://buyin.jinritemai.com/dashboard/servicehall/daren-square"],
+      "matches": ["https://buyin.jinritemai.com/dashboard/servicehall/daren-square/*"],
       "js": ["content_daren.js"]
     }
    ]

@@ -4,8 +4,6 @@
 function openNewTab(daren_url, xpath) {
   console.log('开始执行openNewTab，URL:', daren_url, 'xpath:', xpath); // 添加日志
 
-  callOpenAI();
-
   // 确保 xpath 是数组形式
   const xpaths = Array.isArray(xpath) ? xpath : [xpath];
 
@@ -104,10 +102,27 @@ function extractDataFromPage(vxpath) {
       const dataElement = await waitForElement(getXpath);
       const rawText = dataElement.textContent.trim();
 
-      const kvArray = rawText.split(',').map(item => {
-        const [key, value] = item.split(':').map(str => str.trim());
-        return { key, value, xpath: xpath };
-      });
+      const kvArray = rawText
+        .split(',')
+        .map(item => {
+          // 分割并去除空白字符
+          const [key = '', value = ''] = item.split(':').map(str => str.trim());
+
+          // 如果 key 和 value 都为空，则返回 null（后续过滤）
+          if (!key && !value) {
+            return null;
+          }
+
+          // 如果 key 或 value 为空，则替换为 " "
+          return {
+            key: key || " ",
+            value: value || " ",
+            xpath
+          };
+        })
+        .filter(item => item !== null); // 过滤掉 key 和 value 都为空的对象
+
+
 
       allData = allData.concat(kvArray);
       console.log(`xpath ${index + 1} 提取到的数据为:`, kvArray);
@@ -180,62 +195,3 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 });
 
-async function callOpenAI() {
-  // 替换为你的 API Key
-  const apiKey = "sk-9e627e4006a1489ca50c998ac1579e9b";
-
-  // 替换为你的模型名称
-   const model = "qwen-plus"; 
- // const model = "deepseek-v3";
-
-  // 请求的 URL
-  const baseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-
-  const endpoint = `${baseURL}/chat/completions`; // 确保路径正确
-
-  // 请求的数据
-  const requestData = {
-    model: model,
-    messages: [
-      { role: "user", content: "9.9和9.11谁大" }
-    ]
-  };
-
-  // 设置超时时间（例如 30 秒）
-  const timeout = 30000; // 30 秒
-  const controller = new AbortController();
-  //const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-
-    const startTime = Date.now();
-
-    // 发送请求
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(requestData)
-      //signal: controller.signal // 绑定 AbortController 
-    });
-
-    //clearTimeout(timeoutId); // 清除超时计时器
-
-    const endTime = Date.now();
-    console.log(`请求耗时：${(endTime - startTime) / 1000} 秒`);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    console.log("最终答案：");
-    console.log(data.choices[0].message.content);
-  } catch (error) {
-    console.error("请求失败：", error);
-  }
-
-}
