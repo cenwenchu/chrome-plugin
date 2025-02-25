@@ -169,15 +169,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 left: 50%;
                 transform: translate(-50%, -50%);
                 background: white;
-                padding: 30px;
-                border-radius: 12px;
-                box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+                padding: 40px;
+                border-radius: 16px;
+                box-shadow: 0 12px 48px rgba(0,0,0,0.2);
                 z-index: 10000;
-                max-width: 95%;
-                max-height: 85vh;
-                overflow-y: auto;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-                width: 900px;
+                width: min(90%, 1000px);
+                max-height: 90vh;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                backdrop-filter: blur(10px);
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                animation: slideIn 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             `;
 
             // 创建标题和关闭按钮的容器
@@ -193,10 +197,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const title = document.createElement('h2');
             title.textContent = '达人数据分析';
             title.style.cssText = `
-                color: #333;
-                font-size: 24px;
+                color: #1a1a1a;
+                font-size: 28px;
                 font-weight: 600;
                 margin: 0;
+                position: relative;
+                padding-left: 12px;
             `;
             headerContainer.appendChild(title);
 
@@ -205,18 +211,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             closeButton.innerHTML = '✕';
             closeButton.style.cssText = `
                 border: none;
-                background: none;
+                background: rgba(0,0,0,0.05);
                 cursor: pointer;
                 font-size: 20px;
-                color: #999;
+                color: #666;
                 padding: 4px;
-                transition: color 0.3s;
-                width: 32px;
-                height: 32px;
+                transition: all 0.3s ease;
+                width: 36px;
+                height: 36px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 border-radius: 50%;
+                &:hover {
+                    background: rgba(0,0,0,0.1);
+                    color: #333;
+                    transform: scale(1.1);
+                }
             `;
             closeButton.addEventListener('mouseover', () => {
                 closeButton.style.color = '#333';
@@ -345,12 +356,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // 创建内容区域
             const content = document.createElement('div');
             content.style.cssText = `
-                background: #f8f9f9;
-                border-radius: 8px;
-                padding: 20px;
-                margin-top: 20px;
+                background: rgba(248, 249, 249, 0.8);
+                border-radius: 12px;
+                padding: 24px;
+                margin-top: 24px;
                 overflow-y: auto;
                 max-height: 60vh;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(0,0,0,0.2) transparent;
+                &::-webkit-scrollbar {
+                    width: 6px;
+                }
+                &::-webkit-scrollbar-thumb {
+                    background-color: rgba(0,0,0,0.2);
+                    border-radius: 3px;
+                }
             `;
             
             // 格式化数据显示
@@ -430,8 +450,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(0,0,0,0.45);
-                backdrop-filter: blur(2px);
+                background: rgba(0,0,0,0.6);
+                backdrop-filter: blur(8px);
                 z-index: 9999;
                 animation: fadeIn 0.3s ease;
             `;
@@ -442,6 +462,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 @keyframes fadeIn {
                     from { opacity: 0; }
                     to { opacity: 1; }
+                }
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translate(-50%, -40%);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translate(-50%, -50%);
+                    }
                 }
             `;
             document.head.appendChild(style);
