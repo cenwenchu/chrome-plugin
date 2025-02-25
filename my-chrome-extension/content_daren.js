@@ -228,26 +228,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             modelLabel.textContent = 'AI模型选择：';
             modelLabel.style.cssText = `
                 margin-right: 10px;
+                font-size: 14px;
                 font-weight: bold;
                 color: #333;
+                display: flex;
+                align-items: center;
             `;
             buttonContainer.appendChild(modelLabel); // 将说明添加到按钮容器
 
             const modelSelect = document.createElement('select');
             modelSelect.style.cssText = `
                 margin-right: 10px;
-                padding: 6px; // 增加内边距
+                padding: 6px;
                 border-radius: 4px;
                 border: 1px solid #ccc;
-                background-color: #f9f9f9; // 设置背景颜色
-                font-size: 14px; // 设置字体大小
+                background-color: #f9f9f9;
+                font-size: 14px;
+                height: 36px;
+                transition: border-color 0.3s;
             `;
+            modelSelect.addEventListener('focus', () => {
+                modelSelect.style.borderColor = '#1677ff';
+            });
+            modelSelect.addEventListener('blur', () => {
+                modelSelect.style.borderColor = '#ccc';
+            });
             const option1 = document.createElement('option');
             option1.value = 'qwen-plus';
-            option1.textContent = '千问';
+            option1.textContent = '阿里千问';
             const option2 = document.createElement('option');
             option2.value = 'deepseek';
-            option2.textContent = 'DeepSeek';
+            option2.textContent = 'DeepSeek-v3';
             modelSelect.appendChild(option1);
             modelSelect.appendChild(option2);
 
@@ -292,8 +303,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const formattedContent = formatDataDisplay(message.data);
             content.innerHTML = formattedContent;
 
-            // 添加AI分析按钮点击事件
+            // 清理之前的 AI 分析结果
+            const previousResult = content.querySelector('.ai-result-container');
+            if (previousResult) {
+                previousResult.remove();
+            }
+            
+            // 添加 AI 分析按钮点击事件
             aiButton.addEventListener('click', async () => {
+                // 清理之前的 AI 分析结果
+                const previousResult = content.querySelector('.ai-result-container');
+                if (previousResult) {
+                    previousResult.remove();
+                }
+
                 const selectedModel = modelSelect.value; // 获取选择的模型类型
                 aiButton.disabled = true;
                 aiButton.innerHTML = '<span style="margin-right: 6px;">⏳</span>分析中...';
@@ -303,6 +326,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         `请分析以下达人数据，并给出详细的分析报告：${JSON.stringify(message.data)}`);
                     
                     const aiResultContainer = document.createElement('div');
+                    aiResultContainer.className = 'ai-result-container'; // 添加类名以便清理
                     aiResultContainer.style.cssText = `
                         margin-top: 20px;
                         padding: 20px;
@@ -321,6 +345,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     content.appendChild(aiResultContainer);
                 } catch (error) {
                     const errorDiv = document.createElement('div');
+                    errorDiv.className = 'ai-result-container'; // 添加类名以便清理
                     errorDiv.style.cssText = `
                         margin-top: 20px;
                         padding: 12px;
@@ -329,7 +354,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         border-radius: 8px;
                         color: #cf1322;
                     `;
-                    errorDiv.innerHTML = `<span style="margin-right: 8px;">❌</span>AI分析失败: ${error.message}`;
+                    errorDiv.innerHTML = `<span style="margin-right: 8px;">❌</span>AI分析失败: ${error.message},可以再次点击一下尝试`;
                     content.appendChild(errorDiv);
                 } finally {
                     aiButton.disabled = false;
