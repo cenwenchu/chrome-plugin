@@ -173,32 +173,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 border-radius: 12px;
                 box-shadow: 0 4px 24px rgba(0,0,0,0.15);
                 z-index: 10000;
-                max-width: 90%;
+                max-width: 95%;
                 max-height: 85vh;
                 overflow-y: auto;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-                width: 800px;
+                width: 900px;
+            `;
+
+            // 创建标题和关闭按钮的容器
+            const headerContainer = document.createElement('div');
+            headerContainer.style.cssText = `
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px; // 添加下边距
             `;
 
             // 创建标题
             const title = document.createElement('h2');
             title.textContent = '达人数据分析';
             title.style.cssText = `
-                margin: 0 0 20px 0;
                 color: #333;
                 font-size: 24px;
                 font-weight: 600;
+                margin: 0;
             `;
-
-            // 创建按钮容器
-            const buttonContainer = document.createElement('div');
-            buttonContainer.style.cssText = `
-                position: absolute;
-                top: 20px;
-                right: 20px;
-                display: flex;
-                gap: 12px;
-            `;
+            headerContainer.appendChild(title);
 
             // 创建关闭按钮
             const closeButton = document.createElement('button');
@@ -217,28 +217,77 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 align-items: center;
                 justify-content: center;
                 border-radius: 50%;
-                &:hover {
-                    color: #333;
-                    background: #f5f5f5;
-                }
             `;
+            closeButton.addEventListener('mouseover', () => {
+                closeButton.style.color = '#333';
+                closeButton.style.background = '#f5f5f5';
+            });
+            closeButton.addEventListener('mouseout', () => {
+                closeButton.style.color = '#999';
+                closeButton.style.background = 'none';
+            });
+            headerContainer.appendChild(closeButton);
 
-            // 增加说明：AI模型选择
-            const modelLabel = document.createElement('label');
-            modelLabel.textContent = 'AI模型选择：';
-            modelLabel.style.cssText = `
-                margin-right: 10px;
+            // 创建按钮容器
+            const buttonInputContainer = document.createElement('div');
+            buttonInputContainer.style.cssText = `
+                display: flex;
+                gap: 12px;
+                margin-bottom: 20px; // 添加下边距
+            `;
+          
+
+            // 增加 API Key 输入框
+            const apiKeyLabel = document.createElement('label');
+            apiKeyLabel.textContent = 'API Key：';
+            apiKeyLabel.style.cssText = `
                 font-size: 14px;
                 font-weight: bold;
                 color: #333;
                 display: flex;
                 align-items: center;
             `;
-            buttonContainer.appendChild(modelLabel); // 将说明添加到按钮容器
+            buttonInputContainer.appendChild(apiKeyLabel);
+
+            const apiKeyInput = document.createElement('input');
+            apiKeyInput.type = 'text';
+            apiKeyInput.placeholder = '请输入 API Key';
+            apiKeyInput.style.cssText = `
+                padding: 6px;
+                border-radius: 4px;
+                border: 1px solid #ccc;
+                background-color: #f9f9f9;
+                font-size: 14px;
+                height: 36px;
+                flex-grow: 1; // 允许输入框扩展
+            `;
+            buttonInputContainer.appendChild(apiKeyInput);
+
+            // 从 localStorage 中加载 API Key
+            const savedApiKey = localStorage.getItem('apiKey');
+            if (savedApiKey) {
+                apiKeyInput.value = savedApiKey; // 如果存在，填充输入框
+            }
+
+            // 在输入框失去焦点时保存 API Key
+            apiKeyInput.addEventListener('blur', () => {
+                localStorage.setItem('apiKey', apiKeyInput.value); // 保存到 localStorage
+            });
+
+            // 增加说明：AI模型选择
+            const modelLabel = document.createElement('label');
+            modelLabel.textContent = 'AI模型选择：';
+            modelLabel.style.cssText = `
+                font-size: 14px;
+                font-weight: bold;
+                color: #333;
+                display: flex;
+                align-items: center;
+            `;
+            buttonInputContainer.appendChild(modelLabel);
 
             const modelSelect = document.createElement('select');
             modelSelect.style.cssText = `
-                margin-right: 10px;
                 padding: 6px;
                 border-radius: 4px;
                 border: 1px solid #ccc;
@@ -253,6 +302,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             modelSelect.addEventListener('blur', () => {
                 modelSelect.style.borderColor = '#ccc';
             });
+
             const option1 = document.createElement('option');
             option1.value = 'qwen-plus';
             option1.textContent = '阿里千问';
@@ -287,16 +337,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             `;
 
             // 添加模型选择框和按钮到按钮容器
-            buttonContainer.appendChild(modelSelect);
-            buttonContainer.appendChild(aiButton);
+            buttonInputContainer.appendChild(modelSelect);
+            buttonInputContainer.appendChild(aiButton);
+
+            
 
             // 创建内容区域
             const content = document.createElement('div');
             content.style.cssText = `
-                background: #f8f9fa;
+                background: #f8f9f9;
                 border-radius: 8px;
                 padding: 20px;
                 margin-top: 20px;
+                overflow-y: auto;
+                max-height: 60vh;
             `;
             
             // 格式化数据显示
@@ -322,8 +376,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 aiButton.innerHTML = '<span style="margin-right: 6px;">⏳</span>分析中...';
                 
                 try {
+                    const apiKey = apiKeyInput.value; // 从输入框获取 API Key
                     const aiResponse = await callOpenAI(selectedModel, 
-                        `请分析以下达人数据，并给出详细的分析报告：${JSON.stringify(message.data)}`);
+                        `请分析以下达人数据，并给出详细的分析报告：${JSON.stringify(message.data)}`, apiKey);
                     
                     const aiResultContainer = document.createElement('div');
                     aiResultContainer.className = 'ai-result-container'; // 添加类名以便清理
@@ -363,9 +418,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
 
             // 组装浮层
-            overlay.appendChild(title);
-            overlay.appendChild(buttonContainer);
-            buttonContainer.appendChild(closeButton);
+            overlay.appendChild(headerContainer);
+            overlay.appendChild(buttonInputContainer);
             overlay.appendChild(content);
 
             // 添加遮罩层
@@ -421,9 +475,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 //调用aliyun的ai api
-async function callOpenAI(model, content) {
-    // 替换为你的 API Key
-    const apiKey = "sk-9e627e4006a1489ca50c998ac1579e9b";
+async function callOpenAI(model, content, apiKey) {
     const baseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
     const endpoint = `${baseURL}/chat/completions`;
 
